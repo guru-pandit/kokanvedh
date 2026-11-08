@@ -33,6 +33,11 @@ function renderFilters(props: Partial<React.ComponentProps<typeof ProductFilters
   );
 }
 
+function pickOption(selectLabel: string, optionName: string) {
+  fireEvent.click(screen.getByRole("combobox", { name: selectLabel }));
+  fireEvent.click(screen.getByRole("option", { name: optionName }));
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   mockPush.mockClear();
@@ -149,9 +154,7 @@ describe("ProductFilters — category and brand selects", () => {
   it("navigates immediately (no debounce) on category change", () => {
     renderFilters();
 
-    fireEvent.change(screen.getByDisplayValue("All Categories"), {
-      target: { value: "agarbatti" },
-    });
+    pickOption("Filter by category", "Agarbatti");
 
     expect(mockPush).toHaveBeenCalledWith("/catalog?category=agarbatti");
     expect(mockReplace).not.toHaveBeenCalled();
@@ -160,17 +163,17 @@ describe("ProductFilters — category and brand selects", () => {
   it("navigates immediately (no debounce) on brand change", () => {
     renderFilters();
 
-    fireEvent.change(screen.getByDisplayValue("All Brands"), {
-      target: { value: "Satya" },
-    });
+    pickOption("Filter by brand", "Satya");
 
     expect(mockPush).toHaveBeenCalledWith("/catalog?brand=Satya");
   });
 
-  it("lists every category and brand as an option", () => {
+  it("lists every category and brand as an option once opened", () => {
     renderFilters();
 
+    fireEvent.click(screen.getByRole("combobox", { name: "Filter by category" }));
     expect(screen.getByRole("option", { name: "Agarbatti" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("combobox", { name: "Filter by brand" }));
     expect(screen.getByRole("option", { name: "Cycle" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Satya" })).toBeInTheDocument();
   });
@@ -181,9 +184,7 @@ describe("ProductFilters — analytics", () => {
     const spy = vi.spyOn(analytics, "trackFilterCategory");
     renderFilters();
 
-    fireEvent.change(screen.getByDisplayValue("All Categories"), {
-      target: { value: "agarbatti" },
-    });
+    pickOption("Filter by category", "Agarbatti");
 
     expect(spy).toHaveBeenCalledWith("Agarbatti");
   });

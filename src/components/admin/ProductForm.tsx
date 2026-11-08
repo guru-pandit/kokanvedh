@@ -42,6 +42,7 @@ export function ProductForm({
     watch,
     setValue,
     getValues,
+    getFieldState,
     control,
     setError,
     formState: { errors },
@@ -104,15 +105,23 @@ export function ProductForm({
   const slugEditedManually = useRef(!!product);
   const skuEditedManually = useRef(!!product);
 
+  // Auto-filled values are set programmatically, which skips validation — so
+  // an error left over from an earlier failed submit ("Slug is required")
+  // would stay visible under a field that is now filled. Re-validate only when
+  // such an error is showing; otherwise stay quiet while the user is typing.
+  function setAutoFilled(field: "slug" | "sku", value: string) {
+    setValue(field, value, { shouldValidate: !!getFieldState(field).error });
+  }
+
   function categoryName(id: string) {
     return categories?.find((c) => c.id === id)?.name ?? "";
   }
 
   useEffect(() => {
     if (slugEditedManually.current) return;
-    setValue("slug", buildSlug(categoryName(categoryId), brand, name));
+    setAutoFilled("slug", buildSlug(categoryName(categoryId), brand, name));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- categoryName reads `categories`, which is included below
-  }, [name, brand, categoryId, categories, setValue]);
+  }, [name, brand, categoryId, categories, setValue, getFieldState]);
 
   useEffect(() => {
     if (skuEditedManually.current || !brand || !categoryId) return;
@@ -134,7 +143,7 @@ export function ProductForm({
       try {
         const { sku } = await generateSku(brand, categoryId, controller.signal);
         // The user may have typed a SKU while the request was in flight.
-        if (!superseded && !skuEditedManually.current) setValue("sku", sku);
+        if (!superseded && !skuEditedManually.current) setValue("sku", sku, { shouldValidate: !!getFieldState("sku").error });
       } catch {
         // Generation failed (network hiccup) or this run was aborted — the
         // user can still type a SKU by hand.
@@ -146,10 +155,10 @@ export function ProductForm({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [brand, categoryId, setValue]);
+  }, [brand, categoryId, setValue, getFieldState]);
 
   function regenerateSlug() {
-    setValue("slug", buildSlug(categoryName(getValues("categoryId")), getValues("brand"), getValues("name")));
+    setAutoFilled("slug", buildSlug(categoryName(getValues("categoryId")), getValues("brand"), getValues("name")));
     slugEditedManually.current = false;
   }
 

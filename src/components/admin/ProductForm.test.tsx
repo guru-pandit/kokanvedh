@@ -9,6 +9,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
+function pickCategory() {
+  fireEvent.click(screen.getByLabelText(/^Category/i));
+  fireEvent.click(screen.getByRole("option", { name: "Agarbatti" }));
+}
+
 const category = {
   id: "cat-1",
   name: "Agarbatti",
@@ -393,7 +398,7 @@ describe("ProductForm — SKU auto-generation", () => {
     renderForm(<ProductForm onSubmit={vi.fn()} isSubmitting={false} />);
     await waitFor(() => expect(screen.getByLabelText(/^Category/i)).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText(/^Category/i), { target: { value: "cat-1" } });
+    pickCategory();
 
     // "A" is typed, the debounce elapses, and its request leaves.
     await typeBrandAndAdvance("A");
@@ -422,7 +427,7 @@ describe("ProductForm — SKU auto-generation", () => {
     renderForm(<ProductForm onSubmit={vi.fn()} isSubmitting={false} />);
     await waitFor(() => expect(screen.getByLabelText(/^Category/i)).toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText(/^Category/i), { target: { value: "cat-1" } });
+    pickCategory();
     await typeBrandAndAdvance("Anil");
 
     await waitFor(() => expect(getSkuInput().value).toBe("ANI-INC-0001"));
@@ -435,7 +440,7 @@ describe("ProductForm — SKU auto-generation", () => {
     await waitFor(() => expect(screen.getByLabelText(/^Category/i)).toBeInTheDocument());
 
     fireEvent.change(getSkuInput(), { target: { value: "CUSTOM-SKU-1" } });
-    fireEvent.change(screen.getByLabelText(/^Category/i), { target: { value: "cat-1" } });
+    pickCategory();
     await typeBrandAndAdvance("Anil");
 
     expect(getSkuInput().value).toBe("CUSTOM-SKU-1");
